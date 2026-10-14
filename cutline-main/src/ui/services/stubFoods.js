@@ -1,0 +1,28 @@
+// Placeholder per-100g data until src/api (OFF/USDA) lands.
+const f = (name, kcal, protein, carbs, fat, serving = 100, servingLabel = '100 g') => ({ id: name, name, kcal, protein, carbs, fat, serving, servingLabel, source: 'builtin' });
+export const FOODS = [
+  f('Chicken breast, grilled', 165, 31, 0, 3.6, 150, '1 fillet · 150 g'),
+  f('Greek yogurt 2%', 73, 10, 3.9, 2, 170, '1 pot · 170 g'),
+  f('Greek yogurt 0%', 57, 10.3, 3.6, 0.2, 170, '1 pot · 170 g'),
+  f('Egg, whole', 143, 12.6, 0.7, 9.5, 50, '1 large · 50 g'),
+  f('Oats, rolled', 379, 13, 68, 6.5, 40, '½ cup · 40 g'),
+  f('Banana', 89, 1.1, 23, 0.3, 118, '1 medium · 118 g'),
+  f('Apple', 52, 0.3, 14, 0.2, 182, '1 medium · 182 g'),
+  f('White rice, cooked', 130, 2.7, 28, 0.3, 150),
+  f('Brown rice, cooked', 123, 2.7, 26, 1, 150),
+  f('Salmon, baked', 206, 22, 0, 12, 140),
+  f('Feta cheese', 264, 14, 4, 21, 30, '1 slice · 30 g'),
+  f('Olive oil', 884, 0, 0, 100, 10, '1 tbsp · 10 g'),
+  f('Whole wheat bread', 247, 13, 41, 3.4, 35, '1 slice · 35 g'),
+  f('Tuna in water', 116, 26, 0, 0.8, 120, '1 can · 120 g'),
+  f('Lentils, cooked', 116, 9, 20, 0.4, 200),
+  f('Broccoli', 34, 2.8, 7, 0.4, 100),
+  f('Almonds', 579, 21, 22, 50, 28, '1 handful · 28 g'),
+  f('Whey protein', 400, 80, 8, 6, 30, '1 scoop · 30 g'),
+  f('Cottage cheese', 98, 11, 3.4, 4.3, 200),
+  f('Sweet potato, baked', 90, 2, 21, 0.2, 150),
+  f('Tomato', 18, 0.9, 3.9, 0.2, 120),
+  f('Cucumber', 15, 0.7, 3.6, 0.1, 150),
+  f('Pasta, cooked', 158, 5.8, 31, 0.9, 180),
+  f('Beef mince 5%', 137, 21, 0, 5, 125),
+];

@@ -1,0 +1,86 @@
+/* Additions for M2-M5 + extras. Same tokens, same restraint: one accent, flat surfaces, 4/8px grid. */
+.stack { display: flex; flex-direction: column; gap: var(--s-4); }
+.stack--sm { gap: var(--s-2); }
+.between { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); }
+.hstack { display: flex; align-items: center; gap: var(--s-3); }
+.grow { flex: 1; min-width: 0; }
+.muted { color: var(--text-2); }
+.small { font-size: var(--fs-13); }
+.textarea { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; resize: none; font-size: var(--fs-15); line-height: 1.4; }
+.input-wrap select { appearance: none; background: transparent; }
+.link { color: var(--accent); font-weight: 600; text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; }
+.btn--danger { background: transparent; color: var(--danger); border: 1px solid var(--border); }
+.btn--sm { padding: 0 var(--s-4); font-size: var(--fs-13); }
+.btn:disabled { opacity: .45; }
+.tab { overflow: hidden; }
+.tab, .chip, .segmented button { white-space: nowrap; text-overflow: ellipsis; }
+/* Buttons may wrap (Greek labels are long); icons never shrink. */
+.btn { height: auto; min-height: var(--tap); padding-top: 8px; padding-bottom: 8px; line-height: 1.2; text-align: center; white-space: normal; }
+.btn--sm { min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+.row > .btn, .row > a.btn { min-width: 0; padding-left: var(--s-3); padding-right: var(--s-3); }
+.btn svg, .chip svg, .segmented button svg, .pill svg { flex: none; }
+.segmented button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 var(--s-2); overflow: hidden; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+
+.banner { display: flex; align-items: center; gap: var(--s-3); background: var(--accent-soft); color: var(--text); border-radius: var(--r-md); padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4); font-size: var(--fs-13); }
+.banner > svg { color: var(--accent); flex: none; }
+.banner__text { flex: 1; min-width: 0; }
+.banner__btn { height: 36px; padding: 0 var(--s-2); }
+
+.toggle-row { width: 100%; display: flex; align-items: center; gap: var(--s-4); background: transparent; border: 0; text-align: left; cursor: pointer; padding: var(--s-3) 0; min-height: 56px; }
+.toggle-row:disabled { opacity: .5; }
+.toggle-row__text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.toggle-row__label { font-weight: 500; }
+.toggle-row__sub { font-size: var(--fs-13); color: var(--text-2); }
+.switch { flex: none; width: 48px; height: 28px; border-radius: 14px; background: var(--border); position: relative; transition: background var(--dur) var(--ease); }
+.switch i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform var(--dur) var(--ease); }
+.toggle-row[aria-checked="true"] .switch { background: var(--accent); }
+.toggle-row[aria-checked="true"] .switch i { transform: translateX(20px); }
+.divided > * + * { border-top: 1px solid var(--border); }
+
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart__grid { stroke: var(--border); stroke-width: 1; }
+.chart__tick { fill: var(--text-3); font-size: 10px; font-variant-numeric: tabular-nums; }
+.chart__goal { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 4 4; }
+.chart__line { stroke: var(--accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.chart__dot { fill: var(--text-3); opacity: .75; }
+.legend { display: flex; gap: var(--s-4); font-size: var(--fs-12); color: var(--text-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); text-align: left; }
+.kpi { background: var(--surface-2); border-radius: var(--r-sm); padding: var(--s-3); min-width: 0; }
+.kpi b { display: block; font-size: var(--fs-17); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi small { color: var(--text-2); font-size: var(--fs-12); }
+
+.water-row { display: flex; align-items: center; gap: var(--s-4); }
+.ring-sm { position: relative; width: 56px; height: 56px; flex: none; }
+.ring-sm svg { transform: rotate(-90deg); }
+.ring-sm circle { fill: none; stroke-linecap: round; }
+.ring-sm .t { stroke: var(--surface-2); } .ring-sm .b { stroke: var(--m-fat); transition: stroke-dashoffset var(--dur-slow) var(--ease); }
+.ring-sm .b.full { stroke: var(--accent); }
+.ring-sm span { position: absolute; inset: 0; display: grid; place-items: center; font-size: var(--fs-12); font-weight: 600; }
+
+.video-box { position: relative; background: #000; border-radius: var(--r-lg); overflow: hidden; aspect-ratio: 4 / 3; display: grid; place-items: center; }
+.video-box video { width: 100%; height: 100%; object-fit: cover; }
+.video-box .reticle { position: absolute; left: 12%; right: 12%; top: 34%; bottom: 34%; border: 2px solid rgba(255,255,255,.85); border-radius: var(--r-sm); pointer-events: none; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.photo-grid button { position: relative; padding: 0; border: 0; border-radius: var(--r-sm); overflow: hidden; aspect-ratio: 3 / 4; cursor: pointer; background: var(--surface-2); }
+.photo-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-grid span { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; padding: 2px 6px; text-align: left; }
+.photo-full { width: 100%; max-height: 60dvh; object-fit: contain; border-radius: var(--r-md); background: var(--surface-2); }
+
+.edit-item { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); }
+.edit-item + .edit-item { border-top: 1px solid var(--border); }
+.conf { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+.conf--High { background: var(--accent-soft); color: var(--accent); } .conf--Medium { background: var(--surface-2); color: var(--text-2); } .conf--Low { background: var(--warn-soft); color: var(--warn); }
+.meal-card { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); }
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--s-3); border-radius: var(--r-pill); background: var(--surface-2); font-size: var(--fs-12); font-weight: 600; color: var(--text-2); }
+.pill svg { color: var(--accent); }
+.fast-time { font-size: var(--fs-32); font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+.tabbar .tab { padding: 0 2px; }
+@media (max-width: 360px) { .nutri-grid b { font-size: var(--fs-15); } .segmented button { font-size: var(--fs-13); } }
+:root[data-theme="dark"] .video-box { background: #000; }
+
+/* Text inputs have an intrinsic width (~20ch); without this they push two-up rows wider than the screen. */
+.field, .row > *, .input-wrap { min-width: 0; }
+.input-wrap input, .input-wrap select, .input-wrap textarea { min-width: 0; width: 100%; flex: 1 1 0; }

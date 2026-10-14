@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.cutline.twa",
+      "sha256_cert_fingerprints": ["30:D8:32:7D:55:A5:16:D5:AE:C6:E7:42:20:7A:F4:EE:A3:D2:22:C7:BC:D4:F2:0F:A0:5A:AC:8F:80:5D:91:EA"]
+    }
+  }
+]

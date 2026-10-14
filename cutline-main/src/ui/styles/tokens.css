@@ -1,0 +1,62 @@
+/* Design tokens. One accent (evergreen), neutral grays, 4px spacing grid. */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-sans);
+
+  /* type scale (1.2 minor third-ish) */
+  --fs-12: 0.75rem; --fs-13: 0.8125rem; --fs-15: 0.9375rem; --fs-17: 1.0625rem;
+  --fs-20: 1.25rem; --fs-24: 1.5rem; --fs-32: 2rem; --fs-40: 2.5rem;
+  --lh-tight: 1.15; --lh-body: 1.45;
+
+  /* spacing */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-pill: 999px;
+  --tap: 48px;
+
+  --ease: cubic-bezier(0.2, 0.0, 0, 1);
+  --dur-fast: 120ms; --dur: 200ms; --dur-slow: 400ms;
+
+  /* light */
+  --bg: #f4f5f4;
+  --surface: #ffffff;
+  --surface-2: #eef0ef;
+  --border: #e1e4e2;
+  --text: #121614;
+  --text-2: #5b635f;
+  --text-3: #8a918d;
+  --accent: #0f7a5c;
+  --accent-press: #0b644b;
+  --accent-soft: #e3f1ec;
+  --on-accent: #ffffff;
+  --warn: #b25e09;
+  --warn-soft: #fbf0e3;
+  --danger: #c0362c;
+  /* macro hues — muted, data-only, never used as UI chrome */
+  --m-protein: #0f7a5c;
+  --m-carbs: #c2873a;
+  --m-fat: #5a6d8a;
+  --shadow-1: 0 1px 2px rgba(18,22,20,.06), 0 0 0 1px rgba(18,22,20,.04);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0e1113;
+  --surface: #171b1d;
+  --surface-2: #20262a;
+  --border: #2a3135;
+  --text: #eef1ef;
+  --text-2: #a3aca8;
+  --text-3: #6f7874;
+  --accent: #3fb78f;
+  --accent-press: #34a07c;
+  --accent-soft: #16302a;
+  --on-accent: #06140f;
+  --warn: #e3a35a;
+  --warn-soft: #2e2214;
+  --danger: #ec6b60;
+  --m-protein: #3fb78f;
+  --m-carbs: #d9a35c;
+  --m-fat: #8aa0c2;
+  --shadow-1: 0 0 0 1px rgba(255,255,255,.04);
+  color-scheme: dark;
+}

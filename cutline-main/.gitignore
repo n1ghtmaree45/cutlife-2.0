@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+android-keystore/
+android/
+*.apk
+*.aab
+*.jks
+*.keystore
