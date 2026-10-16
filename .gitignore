@@ -8,3 +8,4 @@ android/
 *.aab
 *.jks
 *.keystore
+!.env.example

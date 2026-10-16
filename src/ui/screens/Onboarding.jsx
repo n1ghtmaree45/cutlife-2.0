@@ -4,6 +4,7 @@ import { Segmented, NumberField, Option, Notice, fmt } from '../components/ui.js
 import { calcTargets, saveProfile, dispWeight, parseWeight, wUnit, round } from '../services/index.js';
 import { t, num } from '../../i18n';
 import { haptic } from '../../lib/haptics';
+import { cloudEnabled } from '../../cloud';
 
 const ACTIVITY = () => [
   { v: 1.2, t: t('act.sed'), s: t('act.sed.s') }, { v: 1.375, t: t('act.light'), s: t('act.light.s') },
@@ -36,8 +37,8 @@ export function Onboarding({ onDone, initialStep = 0, existing }) {
       </div>
       <div class="card stat-list">
         <div class="stat"><span class="stat__k">{t('onb.takes')}</span><span class="stat__v">{t('onb.takes.v')}</span></div>
-        <div class="stat"><span class="stat__k">{t('onb.data')}</span><span class="stat__v">{t('onb.data.v')}</span></div>
-        <div class="stat"><span class="stat__k">{t('onb.account')}</span><span class="stat__v">{t('onb.account.v')}</span></div>
+        <div class="stat"><span class="stat__k">{t('onb.data')}</span><span class="stat__v">{t(cloudEnabled ? 'onb.data.v_cloud' : 'onb.data.v')}</span></div>
+        <div class="stat"><span class="stat__k">{t('onb.account')}</span><span class="stat__v">{t(cloudEnabled ? 'onb.account.v_cloud' : 'onb.account.v')}</span></div>
       </div>
       <div class="spacer" />
       <button class="btn btn--primary btn--block" onClick={next}>{t('onb.start')} <ArrowRight size={18} /></button>

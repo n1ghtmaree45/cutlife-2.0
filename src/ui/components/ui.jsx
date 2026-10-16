@@ -70,14 +70,14 @@ export function NumberField({ label, value, unit, onInput, hint, decimals = 1, p
   );
 }
 
-export function TextField({ label, value, onInput, hint, placeholder, type = 'text', multiline }) {
+export function TextField({ label, value, onInput, hint, placeholder, type = 'text', multiline, autoComplete = 'off' }) {
   return (
     <label class="field">
       {label && <span class="field__label">{label}</span>}
       <span class="input-wrap" style={multiline ? { height: 'auto', padding: 'var(--s-2) var(--s-3)' } : undefined}>
         {multiline
           ? <textarea rows={2} class="textarea" placeholder={placeholder} value={value} onInput={e => onInput(e.currentTarget.value)} />
-          : <input type={type} autoComplete="off" spellcheck={false} placeholder={placeholder} value={value} onInput={e => onInput(e.currentTarget.value)} />}
+          : <input type={type} autoComplete={autoComplete} spellcheck={false} placeholder={placeholder} value={value} onInput={e => onInput(e.currentTarget.value)} />}
       </span>
       {hint && <span class="field__hint">{hint}</span>}
     </label>

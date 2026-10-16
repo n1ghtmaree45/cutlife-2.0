@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { Download, Upload, Trash2, Pencil, HardDrive, ShieldCheck, BellRing } from 'lucide-preact';
+import { Download, Upload, Trash2, Pencil, HardDrive, ShieldCheck, BellRing, RefreshCw, LogOut } from 'lucide-preact';
 import { Segmented, TextField, SelectField, Toggle, Sheet, Notice, NumberField } from '../components/ui.jsx';
 import { getSettings, saveSettings, saveKey, clearKeys, exportJsonFile, exportCsvFile, importFile, resetEverything, downloadBlob, storageEstimate, DEFAULT_MODELS, PROVIDER_LABEL, DEFAULT_WATER_GOAL_ML } from '../services/index.js';
 import { t, num, dateLabel, getLang } from '../../i18n';
 import { requestPermission, permission } from '../../lib/reminders';
 import { haptic } from '../../lib/haptics';
+import { cloudEnabled, currentUser, signOut, sync, getSyncStatus } from '../../cloud';
 
 const PROVIDERS = ['gemini', 'groq', 'openrouter'];
 const Section = ({ title, children, note }) => <section class="stack stack--sm"><h2 class="h-section">{title}</h2><div class="card stack">{children}</div>{note && <span class="field__hint">{note}</span>}</section>;
@@ -19,6 +20,12 @@ export function Settings({ profile, toast, theme, setTheme, onLang }) {
   const [confirm, setConfirm] = useState(null); // 'reset' | {file}
   const [importErr, setImportErr] = useState(null);
   const file = useRef(null);
+  const [email, setEmail] = useState(''); const [sy, setSy] = useState(getSyncStatus());
+  useEffect(() => {
+    if (!cloudEnabled) return;
+    currentUser().then(u => setEmail(u?.email || '')).catch(() => {});
+    const h = e => setSy(e.detail); addEventListener('cutline:sync', h); return () => removeEventListener('cutline:sync', h);
+  }, []);
 
   const load = async () => { const x = await getSettings(); setS(x); setKeys({ gemini: x.apiKeys.gemini || '', groq: x.apiKeys.groq || '', openrouter: x.apiKeys.openrouter || '', usda: x.apiKeys.usda || '' }); setModels(x.models || {}); };
   useEffect(() => { load(); storageEstimate().then(setEst); navigator.storage?.persisted?.().then(setPersisted); }, []);
@@ -104,6 +111,14 @@ export function Settings({ profile, toast, theme, setTheme, onLang }) {
         <button class="btn btn--danger btn--block" onClick={async () => { await clearKeys(); await load(); toast(t('set.keys_cleared')); }}><Trash2 size={16} />{t('set.clear_keys')}</button>
         <div class="hstack small muted"><ShieldCheck size={16} />{t('set.keys_local')}</div>
       </Section>
+
+      {cloudEnabled && <Section title={t('set.account')} note={t('acct.note')}>
+        {email && <div class="stat"><span class="stat__k">{t('acct.signed_in')}</span><span class="stat__v">{email}</span></div>}
+        <div class="stat"><span class="stat__k">{t('acct.last_sync')}</span><span class="stat__v num">{sy.state === 'syncing' ? t('acct.syncing') : sy.at && sy.state !== 'error' ? new Date(sy.at).toLocaleTimeString(getLang() === 'el' ? 'el-GR' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : t('data.never')}</span></div>
+        {sy.state === 'error' && <Notice>{t('acct.sync_fail', { msg: sy.error })}</Notice>}
+        <button class="btn btn--secondary btn--block" disabled={sy.state === 'syncing'} onClick={async () => { await sync(); if (getSyncStatus().state === 'ok') toast(t('acct.sync_ok')); }}><RefreshCw size={16} />{t('acct.sync_now')}</button>
+        <button class="btn btn--secondary btn--block" onClick={() => signOut()}><LogOut size={16} />{t('acct.signout')}</button>
+      </Section>}
 
       <Section title={t('set.data')}>
         <div class="stat"><span class="stat__k">{t('data.last_backup')}</span><span class="stat__v num">{s.lastBackupAt ? dateLabel(new Date(s.lastBackupAt).toISOString().slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : t('data.never')}</span></div>

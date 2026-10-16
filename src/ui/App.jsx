@@ -6,10 +6,12 @@ import { LogFood } from './screens/LogFood.jsx';
 import { Weight } from './screens/Weight.jsx';
 import { Ideas } from './screens/Ideas.jsx';
 import { Settings } from './screens/Settings.jsx';
+import { Login } from './screens/Login.jsx';
 import { TabBar } from './components/TabBar.jsx';
 import { getProfile, getTheme, setTheme, applyStoredSettings } from './services/index.js';
 import { getLang, t } from '../i18n';
 import { startReminderLoop } from '../lib/reminders';
+import { cloudEnabled, hasStoredSession, currentUser, onSignedIn, onSignedOut, startAutoSync } from '../cloud';
 
 const parse = () => { const [path, qs = ''] = (location.hash.slice(1) || '/').split('?'); return { path, params: new URLSearchParams(qs) }; };
 const sysDark = () => matchMedia('(prefers-color-scheme: dark)').matches;
@@ -20,12 +22,21 @@ export function App() {
   const [theme, setThemeState] = useState(getTheme());
   const [msg, setMsg] = useState(null);
   const [update, setUpdate] = useState(null);
+  const [authed, setAuthed] = useState(() => !cloudEnabled || hasStoredSession()); // stored session = usable offline
   const toastTimer = useRef(null); // a ref: the toast function is re-created each render, so a property on it would lose the timer
   const [rev, setRev] = useState(0); // bumped on language change so every screen re-renders with the new strings
   useEffect(() => { const h = e => setUpdate(() => e.detail); addEventListener('cutline:update', h); return () => removeEventListener('cutline:update', h); }, []);
   const dark = theme === 'dark' || (theme === 'system' && sysDark());
 
   const reloadProfile = async () => setProfile(await getProfile());
+  useEffect(() => {
+    if (!cloudEnabled) return;
+    const refresh = async () => { await reloadProfile(); setRev(r => r + 1); };
+    addEventListener('cutline:data-changed', refresh);
+    const off = onSignedOut(() => setAuthed(false));
+    currentUser().then(u => { if (u) { startAutoSync(); onSignedIn(u.id); } }).catch(() => {});
+    return () => { removeEventListener('cutline:data-changed', refresh); off(); };
+  }, []);
   useEffect(() => {
     const h = () => setRoute(parse()); addEventListener('hashchange', h);
     const before = getLang();
@@ -47,6 +58,7 @@ export function App() {
   const relang = () => { document.documentElement.lang = getLang(); setRev(r => r + 1); };
 
   if (profile === undefined) return null;
+  if (!authed) return <div class="app" key={rev}><Login onDone={async u => { await onSignedIn(u.id); startAutoSync(); await reloadProfile(); setRev(r => r + 1); setAuthed(true); }} /></div>;
   const { path, params } = route;
   if (!profile || path === '/onboarding')
     return <div class="app" key={rev}><Onboarding existing={profile} initialStep={Number(params.get('step') || 0)} onDone={async () => { await reloadProfile(); location.hash = profile ? '#/settings' : '#/'; }} /></div>;
