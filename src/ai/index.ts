@@ -1,5 +1,5 @@
 import type { Settings, AiProviderId } from '../types';
-import { AiError, type AiProvider, type PhotoAnalysis, type MealSuggestions, type SuggestInput } from './types';
+import { AiError, type AiProvider, type PhotoAnalysis, type MealSuggestions, type SuggestInput, type PlanInput, type PlanIdeas } from './types';
 import { makeProvider } from './providers';
 import { withBackoff, type PostOpts } from './net';
 
@@ -29,6 +29,8 @@ async function run<T>(chain: AiProvider[], op: (p: AiProvider) => Promise<T>, si
 
 export const analyzePhoto = (s: Settings, blob: Blob, o: { signal?: AbortSignal; hint?: string; net?: PostOpts; sleepImpl?: (ms: number) => Promise<void> } = {}): Promise<PhotoAnalysis> =>
   run(providerChain(s, o.net), p => p.analyzePhoto(blob, { signal: o.signal, hint: o.hint }), o.signal, o.sleepImpl);
+export const planMeals = (s: Settings, i: PlanInput, o: { signal?: AbortSignal; net?: PostOpts; sleepImpl?: (ms: number) => Promise<void> } = {}): Promise<PlanIdeas> =>
+  run(providerChain(s, o.net), p => p.planMeals(i, { signal: o.signal }), o.signal, o.sleepImpl);
 export const suggestMeals = (s: Settings, i: SuggestInput, o: { signal?: AbortSignal; net?: PostOpts; sleepImpl?: (ms: number) => Promise<void> } = {}): Promise<MealSuggestions> =>
   run(providerChain(s, o.net), p => p.suggestMeals(i, { signal: o.signal }), o.signal, o.sleepImpl);
 

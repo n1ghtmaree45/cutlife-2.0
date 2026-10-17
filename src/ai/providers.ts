@@ -1,7 +1,7 @@
-import type { AiProvider, PhotoAnalysis, MealSuggestions, SuggestInput } from './types';
+import type { AiProvider, PhotoAnalysis, MealSuggestions, SuggestInput, PlanInput, PlanIdeas } from './types';
 import { AiError } from './types';
-import { extractJson, validatePhotoAnalysis, validateMealSuggestions } from './json';
-import { PHOTO_SYSTEM, suggestPrompt } from './prompts';
+import { extractJson, validatePhotoAnalysis, validateMealSuggestions, validatePlanIdeas } from './json';
+import { PHOTO_SYSTEM, suggestPrompt, planPrompt } from './prompts';
 import { postJson, blobToBase64, type PostOpts } from './net';
 import type { AiProviderId } from '../types';
 
@@ -39,6 +39,9 @@ export function geminiProvider(c: ProviderCfg): AiProvider {
     async suggestMeals(i: SuggestInput, o): Promise<MealSuggestions> {
       return parse(await call([{ text: suggestPrompt(i) }], undefined, o?.signal), validateMealSuggestions);
     },
+    async planMeals(i: PlanInput, o): Promise<PlanIdeas> {
+      return parse(await call([{ text: planPrompt(i) }], undefined, o?.signal), validatePlanIdeas);
+    },
   };
 }
 
@@ -60,6 +63,9 @@ export function openAiCompatProvider(id: 'groq' | 'openrouter', c: ProviderCfg):
     },
     async suggestMeals(i, o): Promise<MealSuggestions> {
       return parse(await call([{ role: 'user', content: suggestPrompt(i) }], o?.signal), validateMealSuggestions);
+    },
+    async planMeals(i, o): Promise<PlanIdeas> {
+      return parse(await call([{ role: 'user', content: planPrompt(i) }], o?.signal), validatePlanIdeas);
     },
   };
 }

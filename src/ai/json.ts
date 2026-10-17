@@ -1,4 +1,5 @@
-import type { PhotoAnalysis, MealSuggestions } from './types';
+import type { PhotoAnalysis, MealSuggestions, PlanIdeas, PlanIdea } from './types';
+import { SEED_FOODS } from '../data/seedFoods';
 
 /** Strip ```json fences / leading prose and parse the first JSON object. Throws on failure. */
 export function extractJson(text: string): unknown {
@@ -38,4 +39,22 @@ export function validateMealSuggestions(v: unknown): MealSuggestions {
       };
     }),
   };
+}
+
+const SLOT_SET = new Set(['breakfast', 'lunch', 'dinner', 'snack']);
+/** Keeps only ideas that use known ingredient ids and sane grams; the app, not the model, decides the numbers. */
+export function validatePlanIdeas(v: unknown): PlanIdeas {
+  const raw = (v as { meals?: unknown })?.meals;
+  if (!Array.isArray(raw)) throw new Error('missing meals[]');
+  const meals: PlanIdea[] = [];
+  for (const m of raw as any[]) {
+    if (!SLOT_SET.has(m?.slot) || typeof m?.name !== 'string' || m.name.trim().length < 3 || !Array.isArray(m?.items)) continue;
+    const items = m.items.map((x: any) => ({ food: String(x?.food ?? ''), grams: Number(x?.grams) }));
+    if (items.length < 2 || items.length > 6) continue;
+    if (items.some((x: { food: string; grams: number }) => !SEED_FOODS[x.food] || !Number.isFinite(x.grams) || x.grams < 5 || x.grams > 800)) continue;
+    if (new Set(items.map((x: { food: string }) => x.food)).size !== items.length) continue;
+    meals.push({ slot: m.slot, name: m.name.trim().slice(0, 80), items });
+  }
+  if (meals.length < 4) throw new Error(`only ${meals.length} usable meal ideas`);
+  return { meals };
 }

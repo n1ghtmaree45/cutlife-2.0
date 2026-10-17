@@ -20,7 +20,8 @@ export interface Profile {
   goalWeightKg: number;
   activity: ActivityLevel;
   goal: Goal;
-  deficitPct: number;         // 0.15..0.25 when goal=lose
+  deficitPct: number;         // 0.15..0.25 when goal=lose (up to 0.30 for the adult aggressive cut)
+  kcalAdjust?: number;        // 0, -100 or -200: extra daily deficit, adults only
   proteinGPerKg: number;      // 1.6..2.2
   fatPctOfRemaining?: number; // share of non-protein kcal from fat, default 0.35
   targets: Macros;            // computed and persisted

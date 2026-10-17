@@ -5,6 +5,7 @@ import { Dashboard } from './screens/Dashboard.jsx';
 import { LogFood } from './screens/LogFood.jsx';
 import { Weight } from './screens/Weight.jsx';
 import { Ideas } from './screens/Ideas.jsx';
+import { Plan } from './screens/Plan.jsx';
 import { Settings } from './screens/Settings.jsx';
 import { Login } from './screens/Login.jsx';
 import { TabBar } from './components/TabBar.jsx';
@@ -67,6 +68,7 @@ export function App() {
   if (path === '/log') screen = <LogFood key={location.hash} meal={params.get('meal')} mode={params.get('mode')} date={params.get('d')} toast={toast} initialQuery={params.get('q') || ''} openFirst={params.has('open')} />;
   else if (path === '/weight') screen = <Weight profile={profile} reloadProfile={reloadProfile} toast={toast} focusAdd={params.has('add')} />;
   else if (path === '/ideas') screen = <Ideas profile={profile} toast={toast} />;
+  else if (path === '/plan') screen = <Plan profile={profile} toast={toast} />;
   else if (path === '/settings') screen = <Settings profile={profile} toast={toast} theme={theme} setTheme={applyTheme} onLang={relang} />;
   else screen = <Dashboard profile={profile} dark={dark} toggleTheme={toggleTheme} toast={toast} date={params.get('d')} />;
 

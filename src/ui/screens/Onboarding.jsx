@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'preact/hooks';
+import { useState, useMemo, useEffect } from 'preact/hooks';
 import { ChevronLeft, ArrowRight } from 'lucide-preact';
 import { Segmented, NumberField, Option, Notice, fmt } from '../components/ui.jsx';
-import { calcTargets, saveProfile, dispWeight, parseWeight, wUnit, round } from '../services/index.js';
+import { calcTargets, aggressiveEligible, saveProfile, dispWeight, parseWeight, wUnit, round } from '../services/index.js';
 import { t, num } from '../../i18n';
 import { haptic } from '../../lib/haptics';
 import { cloudEnabled } from '../../cloud';
@@ -10,19 +10,24 @@ const ACTIVITY = () => [
   { v: 1.2, t: t('act.sed'), s: t('act.sed.s') }, { v: 1.375, t: t('act.light'), s: t('act.light.s') },
   { v: 1.55, t: t('act.mod'), s: t('act.mod.s') }, { v: 1.725, t: t('act.very'), s: t('act.very.s') },
 ];
-const PACE = () => [
+const PACE = eligible => [
   { v: 15, t: t('pace.gentle'), s: t('pace.gentle.s') }, { v: 20, t: t('pace.steady'), s: t('pace.steady.s') }, { v: 25, t: t('pace.aggr'), s: t('pace.aggr.s') },
+  ...(eligible ? [{ v: 30, t: t('pace.cut'), s: t('pace.cut.s') }] : []),
 ];
 
 export function Onboarding({ onDone, initialStep = 0, existing }) {
   const editing = !!existing;
   const [step, setStep] = useState(editing && initialStep === 0 ? 1 : initialStep);
   const [p, setP] = useState(existing
-    ? { sex: existing.sex, age: existing.age, heightCm: existing.heightCm, weightKg: existing.weightKg, goalWeightKg: existing.goalWeightKg, activity: existing.activity, deficitPct: existing.deficitPct, units: existing.units || 'kg' }
-    : { sex: 'male', age: 34, heightCm: 178, weightKg: 88, goalWeightKg: 80, activity: 1.375, deficitPct: 20, units: 'kg' });
+    ? { sex: existing.sex, age: existing.age, heightCm: existing.heightCm, weightKg: existing.weightKg, goalWeightKg: existing.goalWeightKg, activity: existing.activity, deficitPct: existing.deficitPct, kcalAdjust: existing.kcalAdjust || 0, units: existing.units || 'kg' }
+    : { sex: 'male', age: 34, heightCm: 178, weightKg: 88, goalWeightKg: 80, activity: 1.375, deficitPct: 20, kcalAdjust: 0, units: 'kg' });
   const set = k => v => setP({ ...p, [k]: v });
   const setW = k => v => setP({ ...p, [k]: v === '' ? '' : round(parseWeight(v, p.units), 3) });
   const valid = p.age >= 14 && p.heightCm >= 120 && p.weightKg >= 35 && p.goalWeightKg >= 35;
+  const aggrOk = valid && aggressiveEligible(p.age, p.weightKg, p.heightCm);
+  const adult = valid && p.age >= 18;
+  useEffect(() => { if (!adult && p.kcalAdjust) setP(x => ({ ...x, kcalAdjust: 0 })); }, [adult, p.kcalAdjust]);
+  useEffect(() => { if (!aggrOk && p.deficitPct > 25) setP(x => ({ ...x, deficitPct: 25 })); }, [aggrOk, p.deficitPct]);
   const tg = useMemo(() => valid ? calcTargets(p) : null, [p]);
   const total = 4;
   const next = () => { haptic(8); setStep(step + 1); };
@@ -76,7 +81,11 @@ export function Onboarding({ onDone, initialStep = 0, existing }) {
         <div class="hero" style={{ paddingTop: 'var(--s-4)' }}><h1>{t('onb.goal')}</h1><p>{t('onb.goal.p')}</p></div>
         <NumberField label={t('onb.goalw')} value={p.goalWeightKg === '' ? '' : round(dispWeight(p.goalWeightKg, p.units), 1)} unit={u} onInput={setW('goalWeightKg')} />
         <div class="field"><span class="field__label">{t('onb.pace')}</span>
-          <div class="option-list">{PACE().map(a => <Option title={a.t} sub={a.s} selected={p.deficitPct === a.v} onClick={() => set('deficitPct')(a.v)} />)}</div></div>
+          <div class="option-list">{PACE(aggrOk).map(a => <Option title={a.t} sub={a.s} selected={p.deficitPct === a.v} onClick={() => set('deficitPct')(a.v)} />)}</div></div>
+        {adult && <div class="field"><span class="field__label">{t('onb.adjust')}</span>
+          <Segmented label={t('onb.adjust')} value={p.kcalAdjust || 0} onChange={set('kcalAdjust')} options={[{ value: 0, label: '0' }, { value: -100, label: '−100' }, { value: -200, label: '−200' }]} />
+          <span class="field__hint">{t('onb.adjust.hint')}</span></div>}
+        {p.deficitPct > 25 && <Notice info>{t('pace.cut.note')}</Notice>}
         {tg?.warnings.map(w => <Notice>{w}</Notice>)}
       </>}
 

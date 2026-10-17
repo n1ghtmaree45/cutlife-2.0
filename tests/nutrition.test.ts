@@ -73,3 +73,62 @@ describe('weight trend', () => {
     const fast = N.suggestAdjustment({ ...p, observedWeeklyKg: -1.2 }); expect(fast).toMatchObject({ reason: 'too_fast', deltaKcal: 200 });
   });
 });
+
+describe('aggressive cut', () => {
+  const adult = { sex: 'male' as const, weightKg: 100, heightCm: 180, age: 30, activity: 'moderate' as const, goal: 'lose' as const };
+  it('uses a 30% deficit for an eligible adult, within 1%/week, never below BMR', () => {
+    const r = N.computeTargets({ ...adult, deficitPct: 0.3, proteinGPerKg: 2.2 });
+    expect(r.dailyDeficit).toBeCloseTo(r.tdee * 0.3, -1);
+    expect(Math.abs(r.expectedWeeklyKg)).toBeLessThanOrEqual(1.0 + 0.01);
+    expect(r.targets.kcal).toBeGreaterThanOrEqual(r.bmr);
+    expect(r.targets.protein).toBe(220);
+    expect(r.warnings).not.toContain('aggressive_not_allowed');
+  });
+  it('is refused for minors and for people with BMI below 25 (falls back to 25%)', () => {
+    for (const x of [{ age: 17 }, { weightKg: 68 }]) {
+      const r = N.computeTargets({ ...adult, ...x, deficitPct: 0.3 });
+      const base = N.computeTargets({ ...adult, ...x, deficitPct: 0.25 });
+      expect(r.warnings).toContain('aggressive_not_allowed');
+      expect(r.targets.kcal).toBe(base.targets.kcal);
+    }
+  });
+  it('holds the target at BMR when 30% would go lower, but is never gentler than the 25% pace', () => {
+    for (const x of [{ activity: 'sedentary' as const }, { activity: 'light' as const, weightKg: 92 }]) {
+      const ag = N.computeTargets({ ...adult, ...x, deficitPct: 0.3 });
+      const std = N.computeTargets({ ...adult, ...x, deficitPct: 0.25 });
+      expect(ag.targets.kcal).toBeLessThanOrEqual(std.targets.kcal);
+      if (std.targets.kcal >= std.bmr) expect(ag.targets.kcal).toBeGreaterThanOrEqual(ag.bmr);
+    }
+  });
+  it('eligibility helper', () => {
+    expect(N.aggressiveEligible(18, 100, 180)).toBe(true); expect(N.aggressiveEligible(17, 100, 180)).toBe(false);
+    expect(N.aggressiveEligible(30, 70, 180)).toBe(false);
+  });
+});
+
+describe('kcal fine-tune', () => {
+  const adult = { sex: 'male' as const, weightKg: 100, heightCm: 180, age: 30, activity: 'moderate' as const, goal: 'lose' as const, deficitPct: 0.2 };
+  it('takes 100 or 200 kcal off the target for adults', () => {
+    const base = N.computeTargets(adult).targets.kcal;
+    expect(N.computeTargets({ ...adult, kcalAdjust: -100 }).targets.kcal).toBe(base - 100);
+    expect(N.computeTargets({ ...adult, kcalAdjust: -200 }).targets.kcal).toBe(base - 200);
+  });
+  it('clamps silly values to 200 and ignores positive ones', () => {
+    const base = N.computeTargets(adult).targets.kcal;
+    expect(N.computeTargets({ ...adult, kcalAdjust: -900 }).targets.kcal).toBe(base - 200);
+    expect(N.computeTargets({ ...adult, kcalAdjust: 300 }).targets.kcal).toBe(base);
+  });
+  it('is ignored for minors, with a warning', () => {
+    const base = N.computeTargets({ ...adult, age: 16 }).targets.kcal;
+    const r = N.computeTargets({ ...adult, age: 16, kcalAdjust: -200 });
+    expect(r.targets.kcal).toBe(base); expect(r.warnings).toContain('adjust_not_allowed');
+  });
+  it('never goes under the safe floor', () => {
+    const r = N.computeTargets({ sex: 'female', weightKg: 50, heightCm: 155, age: 60, activity: 'sedentary', goal: 'lose', deficitPct: 0.25, kcalAdjust: -200 });
+    expect(r.targets.kcal).toBe(1200);
+  });
+  it('stays inside the weekly-loss cap', () => {
+    const r = N.computeTargets({ ...adult, deficitPct: 0.25, kcalAdjust: -200 });
+    expect(Math.abs(r.expectedWeeklyKg)).toBeLessThanOrEqual(0.75 + 0.01);
+  });
+});

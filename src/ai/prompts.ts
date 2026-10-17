@@ -9,3 +9,12 @@ Remaining: ${Math.round(i.remaining.kcal)} kcal, ${Math.round(i.remaining.protei
 Each option should fit inside the remaining kcal. ${i.preferences ? `Preferences: ${i.preferences}.` : ''} ${i.allergies ? `Allergies / must avoid: ${i.allergies}.` : ''} ${i.pantry ? `Prefer using what is in the pantry: ${i.pantry}.` : ''}
 Respond with ONLY a JSON object, no markdown, no commentary, exactly this shape:
 {"suggestions":[{"name":string,"description":string,"ingredients":[{"name":string,"grams":number}],"macros":{"kcal":number,"protein":number,"carbs":number,"fat":number},"prepMinutes":number}]}`;
+
+export const planPrompt = (i: { foods: { id: string; name: string }[]; preferences?: string; allergies?: string; lang: 'en' | 'el' }) =>
+`Create meal ideas for a weekly healthy eating plan. Another program will scale the portions to the person's calorie target, so give typical grams for ONE adult portion and do not worry about total calories.
+Use ONLY these ingredient ids (id = name): ${i.foods.map(f => `${f.id} = ${f.name}`).join('; ')}.
+Give exactly: 5 breakfast, 6 lunch, 6 dinner, 4 snack ideas. Each idea has 2 to 6 ingredients, is practical home cooking, and differs clearly from the others. Prefer lean protein and plenty of vegetables.
+${i.preferences ? `Preferences: ${i.preferences}.` : ''} ${i.allergies ? `Must avoid: ${i.allergies}.` : ''}
+Write meal names in ${i.lang === 'el' ? 'Greek' : 'English'}.
+Respond with ONLY a JSON object, no markdown, no commentary, exactly this shape:
+{"meals":[{"slot":"breakfast"|"lunch"|"dinner"|"snack","name":string,"items":[{"food":string,"grams":number}]}]}`;

@@ -9,11 +9,17 @@ export interface MealSuggestions { suggestions: MealSuggestion[]; } // exactly 3
 
 export interface SuggestInput { remaining: Macros; preferences?: string; allergies?: string; pantry?: string; }
 
+/** Menu ideas only: the app does the arithmetic, so the model never has to be right about calories. */
+export interface PlanInput { foods: { id: string; name: string }[]; preferences?: string; allergies?: string; lang: 'en' | 'el' }
+export interface PlanIdea { slot: 'breakfast' | 'lunch' | 'dinner' | 'snack'; name: string; items: { food: string; grams: number }[] }
+export interface PlanIdeas { meals: PlanIdea[] }
+
 export interface AiProvider {
   id: AiProviderId;
   /** jpegBlob: already resized to max 1024px, quality ~0.7 (see resizeImage in M3). Never persisted. */
   analyzePhoto(jpegBlob: Blob, opts?: { signal?: AbortSignal; hint?: string }): Promise<PhotoAnalysis>;
   suggestMeals(input: SuggestInput, opts?: { signal?: AbortSignal }): Promise<MealSuggestions>;
+  planMeals(input: PlanInput, opts?: { signal?: AbortSignal }): Promise<PlanIdeas>;
 }
 
 export class AiError extends Error {

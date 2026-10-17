@@ -4,7 +4,7 @@
  * If backend signatures change, fix it here only.
  */
 import * as db from '../../data/db';
-import { computeTargets, ACTIVITY_FACTORS, ageFromBirthDate, kgToLb, lbToKg, round, macrosForGrams, recipePer100g, etaToGoal, weeklyRate, movingAverage7, suggestAdjustment, KCAL_PER_KG_FAT } from '../../lib/nutrition';
+import { computeTargets, aggressiveEligible, AGGRESSIVE_PROTEIN_G_PER_KG, ACTIVITY_FACTORS, ageFromBirthDate, kgToLb, lbToKg, round, macrosForGrams, recipePer100g, etaToGoal, weeklyRate, movingAverage7, suggestAdjustment, KCAL_PER_KG_FAT } from '../../lib/nutrition';
 import { searchFoods as apiSearch } from '../../api/search';
 import { lookupBarcode } from '../../api/off';
 import * as ai from '../../ai';
@@ -14,6 +14,7 @@ import { setLang, getLang, t, num } from '../../i18n';
 import { setHapticsEnabled } from '../../lib/haptics';
 import { FOODS } from './stubFoods.js';
 
+export { aggressiveEligible };
 export { activityBonus, dayTargetKcal, waterTotal, DEFAULT_WATER_GOAL_ML, addDays, kgToLb, lbToKg, round, movingAverage7 };
 export const todayKey = () => db.todayISO();
 export const uid = db.uid;
@@ -56,18 +57,18 @@ export const lUnit = units => (units === 'lb' ? 'in' : 'cm');
 // UI profile: {sex, age, heightCm, weightKg, goalWeightKg, activity (factor), deficitPct (15..25), units, targets}
 const factorToKey = f => Object.entries(ACTIVITY_FACTORS).reduce((best, [k, v]) => Math.abs(v - f) < Math.abs(ACTIVITY_FACTORS[best] - f) ? k : best, 'sedentary');
 const birthDateForAge = age => { const d = new Date(); d.setFullYear(d.getFullYear() - age); d.setDate(d.getDate() - 1); return db.todayISO(d); };
-const toInput = p => ({ sex: p.sex, weightKg: p.weightKg, heightCm: p.heightCm, age: p.age, activity: factorToKey(p.activity), goal: 'lose', deficitPct: p.deficitPct / 100, proteinGPerKg: 2.0 });
+const toInput = p => ({ sex: p.sex, weightKg: p.weightKg, heightCm: p.heightCm, age: p.age, activity: factorToKey(p.activity), goal: 'lose', deficitPct: p.deficitPct / 100, proteinGPerKg: p.deficitPct > 25 ? AGGRESSIVE_PROTEIN_G_PER_KG : 2.0, kcalAdjust: p.kcalAdjust || 0 });
 
 export async function getProfile() {
   const p = await db.getProfile(); if (!p) return null;
   const [s, ws] = await Promise.all([db.getSettings(), db.listWeights()]);
   return { sex: p.sex, age: ageFromBirthDate(p.birthDate), heightCm: p.heightCm, weightKg: ws.length ? ws[ws.length - 1].kg : p.weightKg, startWeightKg: p.weightKg,
-    goalWeightKg: p.goalWeightKg, activity: ACTIVITY_FACTORS[p.activity], deficitPct: Math.round(p.deficitPct * 100), units: s.units || 'kg', targets: p.targets, updatedAt: p.updatedAt };
+    goalWeightKg: p.goalWeightKg, activity: ACTIVITY_FACTORS[p.activity], deficitPct: Math.round(p.deficitPct * 100), kcalAdjust: p.kcalAdjust || 0, units: s.units || 'kg', targets: p.targets, updatedAt: p.updatedAt };
 }
 export async function saveProfile(u) {
   const r = computeTargets(toInput(u));
   await db.saveProfile({ id: 'me', sex: u.sex, birthDate: birthDateForAge(u.age), heightCm: u.heightCm, weightKg: u.weightKg, goalWeightKg: u.goalWeightKg,
-    activity: factorToKey(u.activity), goal: 'lose', deficitPct: u.deficitPct / 100, proteinGPerKg: 2.0, targets: r.targets, updatedAt: Date.now() });
+    activity: factorToKey(u.activity), goal: 'lose', deficitPct: u.deficitPct / 100, proteinGPerKg: u.deficitPct > 25 ? AGGRESSIVE_PROTEIN_G_PER_KG : 2.0, kcalAdjust: u.kcalAdjust || 0, targets: r.targets, updatedAt: Date.now() });
   if (u.units) await db.saveSettings({ units: u.units });
   if (!(await db.listWeights()).length) await db.addWeight(todayKey(), u.weightKg); // the chart starts at the first weigh-in
   await db.saveSettings({ lastAdjustAt: todayKey() });
@@ -78,6 +79,8 @@ const WARN = (w, r, u) => ({
   floor_applied: t('warn.floor', { kcal: num(u.sex === 'male' ? 1500 : 1200) }),
   deficit_out_of_range: t('warn.deficit_range'),
   protein_out_of_range: t('warn.protein_range'),
+  aggressive_not_allowed: t('warn.aggr_not_allowed'),
+  adjust_not_allowed: t('warn.adjust_not_allowed'),
 }[w]);
 /** -> {bmr, tdee, kcal, protein, carbs, fat, weeklyLossKg, warnings: string[]} */
 export function calcTargets(u) {
@@ -226,6 +229,7 @@ export async function storageEstimate() {
 
 /* ---------- AI ---------- */
 export const aiAnalyze = async (blob, { hint, signal } = {}) => ai.analyzePhoto(await db.getSettings(), blob, { hint, signal });
+export const aiPlanMeals = async (input, { signal } = {}) => ai.planMeals(await db.getSettings(), input, { signal });
 export const aiSuggest = async (input, { signal } = {}) => ai.suggestMeals(await db.getSettings(), input, { signal });
 export { resizeImage, confidenceLabel, AiError, DEFAULT_MODELS, PROVIDER_LABEL } from '../../ai';
 

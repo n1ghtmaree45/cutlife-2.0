@@ -6,6 +6,17 @@ export const ACTIVITY_FACTORS: Record<ActivityLevel, number> = {
 };
 export const KCAL_FLOOR: Record<Sex, number> = { male: 1500, female: 1200 };
 export const MAX_WEEKLY_LOSS_PCT = 0.0075;
+/** Aggressive cut: a deliberate, time-limited option, only for adults who have fat to lose. */
+export const STANDARD_MAX_DEFICIT = 0.25;
+export const AGGRESSIVE_DEFICIT = 0.3;
+export const MAX_WEEKLY_LOSS_PCT_AGGRESSIVE = 0.01;
+export const AGGRESSIVE_MIN_AGE = 18;
+export const AGGRESSIVE_MIN_BMI = 25;
+export const AGGRESSIVE_PROTEIN_G_PER_KG = 2.2;
+export const MAX_KCAL_ADJUST = 200;
+export const bmi = (weightKg: number, heightCm: number) => weightKg / (heightCm / 100) ** 2;
+export const aggressiveEligible = (age: number, weightKg: number, heightCm: number) =>
+  age >= AGGRESSIVE_MIN_AGE && heightCm > 0 && bmi(weightKg, heightCm) >= AGGRESSIVE_MIN_BMI;
 export const LB_PER_KG = 2.2046226218;
 
 export const kgToLb = (kg: number) => kg * LB_PER_KG;
@@ -26,12 +37,14 @@ export function bmr(sex: Sex, weightKg: number, heightCm: number, age: number): 
 }
 export const tdee = (bmrKcal: number, activity: ActivityLevel) => bmrKcal * ACTIVITY_FACTORS[activity];
 
-export type TargetWarning = 'rate_capped' | 'floor_applied' | 'deficit_out_of_range' | 'protein_out_of_range';
+export type TargetWarning = 'rate_capped' | 'floor_applied' | 'deficit_out_of_range' | 'protein_out_of_range' | 'aggressive_not_allowed' | 'adjust_not_allowed';
 
 export interface TargetInput {
   sex: Sex; weightKg: number; heightCm: number; age: number; activity: ActivityLevel;
   goal: Goal; deficitPct?: number; proteinGPerKg?: number; fatPctOfRemaining?: number;
   surplusPct?: number;
+  /** Optional extra daily deficit chosen by the user: 0, -100 or -200 kcal. Adults only; the floors still apply. */
+  kcalAdjust?: number;
 }
 export interface TargetResult {
   bmr: number; tdee: number; targets: Macros;
@@ -44,7 +57,8 @@ export interface TargetResult {
 /**
  * Compute daily calorie/macro targets.
  * lose: deficit = tdee*deficitPct (default 0.20, intended 0.15..0.25), capped so loss <= 0.75% bw/week,
- *       then floored at 1500 (m) / 1200 (f). gain: +surplusPct (default 0.10). maintain: tdee.
+ *       then floored at 1500 (m) / 1200 (f). A deficit above 25% (up to 30%) is the "aggressive cut": allowed only
+ *       for adults with BMI >= 25, capped at 1% bw/week, and kept at or above BMR (but never less aggressive than 25%). Otherwise it falls back to 25%. gain: +surplusPct (default 0.10). maintain: tdee.
  * Protein = proteinGPerKg (default 1.8) * weightKg. Fat = fatPctOfRemaining (default 0.35) of
  * non-protein kcal, but at least 0.6 g/kg. Carbs = remainder (>= 0).
  */
@@ -52,18 +66,32 @@ export function computeTargets(i: TargetInput): TargetResult {
   const warnings: TargetWarning[] = [];
   const b = bmr(i.sex, i.weightKg, i.heightCm, i.age);
   const t = tdee(b, i.activity);
-  const maxDailyDeficit = (i.weightKg * MAX_WEEKLY_LOSS_PCT * KCAL_PER_KG_FAT) / 7;
+  let aggressive = false;
+  let floor = KCAL_FLOOR[i.sex];
   let kcal = t;
+  let pct = i.deficitPct ?? 0.2;
   if (i.goal === 'lose') {
-    const pct = i.deficitPct ?? 0.2;
-    if (pct < 0.15 || pct > 0.25) warnings.push('deficit_out_of_range');
-    let deficit = t * pct;
+    if (pct > STANDARD_MAX_DEFICIT) {
+      if (aggressiveEligible(i.age, i.weightKg, i.heightCm)) { aggressive = true; if (pct > AGGRESSIVE_DEFICIT) pct = AGGRESSIVE_DEFICIT; }
+      else { warnings.push('aggressive_not_allowed'); pct = STANDARD_MAX_DEFICIT; }
+      if ((i.deficitPct ?? 0) > AGGRESSIVE_DEFICIT) warnings.push('deficit_out_of_range');
+    } else if (pct < 0.15) warnings.push('deficit_out_of_range');
+  }
+  let extra = 0;
+  if (i.goal === 'lose' && i.kcalAdjust) {
+    if (i.age >= AGGRESSIVE_MIN_AGE) extra = Math.min(MAX_KCAL_ADJUST, Math.max(0, -i.kcalAdjust));
+    else warnings.push('adjust_not_allowed');
+  }
+  const maxDailyDeficit = (i.weightKg * (aggressive ? MAX_WEEKLY_LOSS_PCT_AGGRESSIVE : MAX_WEEKLY_LOSS_PCT) * KCAL_PER_KG_FAT) / 7;
+  if (i.goal === 'lose') {
+    // Keep the aggressive target at or above resting needs (BMR), but never less aggressive than the standard 25% pace.
+    if (aggressive) floor = Math.min(Math.max(floor, Math.round(b)), Math.round(t * (1 - STANDARD_MAX_DEFICIT)));
+    let deficit = t * pct + extra;
     if (deficit > maxDailyDeficit) { deficit = maxDailyDeficit; warnings.push('rate_capped'); }
     kcal = t - deficit;
   } else if (i.goal === 'gain') {
     kcal = t * (1 + (i.surplusPct ?? 0.1));
   }
-  const floor = KCAL_FLOOR[i.sex];
   if (kcal < floor) { kcal = floor; warnings.push('floor_applied'); }
   kcal = Math.round(kcal);
 

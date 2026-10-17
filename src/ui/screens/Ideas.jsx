@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { RefreshCw, Plus, Clock, KeyRound, Sparkles } from 'lucide-preact';
+import { RefreshCw, Plus, Clock, KeyRound, Sparkles, CalendarDays } from 'lucide-preact';
 import { Notice, TextField, fmt } from '../components/ui.jsx';
 import { getDay, aiSuggest, AiError, addEntry, saveSettings, dayTargetKcal, todayKey } from '../services/index.js';
 import { t } from '../../i18n';
@@ -37,6 +37,7 @@ export function Ideas({ profile, toast }) {
   return (
     <main class="page">
       <div class="topbar"><div class="topbar__title">{t('ideas.title')}</div></div>
+      <a class="btn btn--secondary btn--block" href="#/plan"><CalendarDays size={18} />{t('plan.open')}</a>
       <section class="card stack stack--sm">
         <span class="eyebrow">{t('ideas.remaining')}</span>
         <div class="nutri-grid">
